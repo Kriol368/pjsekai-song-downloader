@@ -84,13 +84,25 @@ def fetch_song_metadata(song_link):
         singer_cells = cells[1].find_all('a')
         singers = [singer.text.strip() for singer in singer_cells]
 
-        # Extract audio link (href from column 3)
+        # Extracting audio link from the <audio> tag's <source> tags
         audio_cell = cells[2]
-        audio_tag = audio_cell.find('a', href=True)
+        audio_tag = audio_cell.find('audio')
+
         if audio_tag:
-            audio_link = audio_tag['href']  # Just use the href as the full URL
+            # Loop through all <source> tags within <audio> to get the first valid one
+            source_tag = None
+            for source in audio_tag.find_all('source'):
+                if source.get('src'):
+                    source_tag = source
+                    break
+
+            if source_tag:
+                audio_link = source_tag['src'].lstrip('//')  # Remove leading '//'
+            else:
+                audio_link = "No valid audio source found"
         else:
             audio_link = "No audio found"
+
 
         # Append the data for each version
         audio_details.append({
@@ -101,8 +113,7 @@ def fetch_song_metadata(song_link):
     return {
         "title": title,
         "cover_image": cover_image_url,
-        "audio_details": audio_details,
-        "singers_info": audio_details,  # Add the singers and audio details
+        "audio_details": audio_details,  # Add the singers and audio details
     }
 
 
@@ -122,8 +133,8 @@ def main():
         print("\n--- Song Data ---")
         print(f"Title: {song_data['title']}")
         print(f"Cover Image: {song_data['cover_image']}")
-        if song_data['singers_info']:
-            for singer_info in song_data['singers_info']:
+        if song_data['audio_details']:
+            for singer_info in song_data['audio_details']:
                 print(f"  Singers: {', '.join(singer_info['singers'])}")
                 print(f"  Audio Link: {singer_info['audio_link']}")
         else:
