@@ -153,6 +153,7 @@ def download_audio(audio_url, song_folder, title, version_index):
 
 def update_audio_metadata(audio_path, title, singers, cover_image_path):
     try:
+        print(f"Attempting to update metadata for {title} at {audio_path}")
         audio_file = MP3(audio_path, ID3=ID3)
         audio_file.tags = ID3()
 
@@ -168,13 +169,13 @@ def update_audio_metadata(audio_path, title, singers, cover_image_path):
         audio_file.save()
         print(f"Metadata updated for {title}")
     except Exception as e:
-        print(f"Error updating audio metadata for {title}: {e}")
+        print(f"Error updating audio metadata for {title} ({audio_path}): {e}")
 
 def main():
     song_links = fetch_song_links()
     print(f"Found {len(song_links)} songs.")
 
-    for idx, song_link in enumerate(song_links[:5]):  # Process first 5 songs
+    for idx, song_link in enumerate(song_links):  # Process first 5 songs
         print(f"Processing {idx + 1}/{len(song_links)}: {song_link}")
         metadata = fetch_song_metadata(song_link)
         if metadata:
@@ -187,8 +188,14 @@ def main():
             # Download audio and update metadata
             for version_index, version in enumerate(metadata['audio_details']):
                 audio_path = download_audio(version['audio_link'], song_folder, metadata['title'], version_index)
-                if audio_path and cover_image_path:
-                    update_audio_metadata(audio_path, metadata['title'], version['singers'], cover_image_path)
+                if audio_path:
+                    print(f"Audio downloaded: {audio_path}")
+                    if cover_image_path:
+                        update_audio_metadata(audio_path, metadata['title'], version['singers'], cover_image_path)
+                    else:
+                        print(f"No cover image for {metadata['title']}")
+                else:
+                    print(f"Failed to download audio for {metadata['title']}")
 
 
 if __name__ == "__main__":
