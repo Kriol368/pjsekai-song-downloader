@@ -10,6 +10,7 @@ HEADERS = {
     "Referer": "https://www.google.com",
 }
 
+
 def fetch_song_links():
     URL = f"{BASE_URL}/wiki/List_of_songs"
     response = requests.get(URL, headers=HEADERS)
@@ -43,6 +44,7 @@ def fetch_song_links():
 
     return song_links
 
+
 def fetch_song_metadata(song_link):
     response = requests.get(song_link, headers=HEADERS)
     if response.status_code != 200:
@@ -72,27 +74,26 @@ def fetch_song_metadata(song_link):
     second_table = tables[1]
     rows = second_table.find_all('tr')[1:]  # Skip header row
 
-    # Loop through each row to extract singer and audio details
-    singers_list = []
+    # Loop through each row to extract singer and audio details for each version
     for row in rows:
         cells = row.find_all('td')
         if len(cells) < 3:
             continue
 
-        # Extract singers
+        # Extract singers (text only from column 2, no href)
         singer_cells = cells[1].find_all('a')
         singers = [singer.text.strip() for singer in singer_cells]
 
-        # Extract audio link
+        # Extract audio link (href from column 3)
         audio_cell = cells[2]
         audio_tag = audio_cell.find('a', href=True)
         if audio_tag:
-            audio_link = BASE_URL + audio_tag['href']
+            audio_link = audio_tag['href']  # Just use the href as the full URL
         else:
             audio_link = "No audio found"
 
-        # Append the data
-        singers_list.append({
+        # Append the data for each version
+        audio_details.append({
             "singers": singers,
             "audio_link": audio_link
         })
@@ -101,15 +102,16 @@ def fetch_song_metadata(song_link):
         "title": title,
         "cover_image": cover_image_url,
         "audio_details": audio_details,
-        "singers_info": singers_list,  # Add the singers and audio details
+        "singers_info": audio_details,  # Add the singers and audio details
     }
+
 
 def main():
     song_links = fetch_song_links()
     print(f"Found {len(song_links)} songs.")
 
     all_song_data = []
-    for idx, song_link in enumerate(song_links):
+    for idx, song_link in enumerate(song_links[:5]):
         print(f"Processing {idx + 1}/{len(song_links)}: {song_link}")
         metadata = fetch_song_metadata(song_link)
         if metadata:
@@ -126,6 +128,7 @@ def main():
                 print(f"  Audio Link: {singer_info['audio_link']}")
         else:
             print("  No singer or audio details found.")
+
 
 if __name__ == "__main__":
     main()
