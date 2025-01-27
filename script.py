@@ -275,7 +275,7 @@ def main():
     song_links = fetch_song_links()  # Fetch song links
     print(f"Found {len(song_links)} songs.")
 
-    for idx, song_link in enumerate(song_links[:5]):
+    for idx, song_link in enumerate(song_links):
         print(f"Processing {idx + 1}/{len(song_links)}: {song_link}")
         metadata = fetch_song_metadata(song_link)
         if metadata:
