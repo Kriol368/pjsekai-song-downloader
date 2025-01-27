@@ -68,7 +68,11 @@ def fetch_song_metadata(song_link):
 
     # Extracting cover image URL
     cover_image_tag = soup.find('img', src=lambda value: value and 'Jacket' in value)
-    cover_image_url = "https:" + cover_image_tag['src'] if cover_image_tag else "No cover image found"
+    cover_image_url = "https:" + cover_image_tag['src']
+    # If the URL contains '/thumb/' and the resolution part (e.g., /220px), process it
+    if "/thumb/" in cover_image_url:
+        # Remove '/thumb/' and the part after the resolution (e.g., /220px)
+        cover_image_url = cover_image_url.replace("/thumb/", "/").split("/220px-")[0]
 
     # Extracting audio details
     audio_details = []
@@ -271,7 +275,7 @@ def main():
     song_links = fetch_song_links()  # Fetch song links
     print(f"Found {len(song_links)} songs.")
 
-    for idx, song_link in enumerate(song_links):
+    for idx, song_link in enumerate(song_links[:5]):
         print(f"Processing {idx + 1}/{len(song_links)}: {song_link}")
         metadata = fetch_song_metadata(song_link)
         if metadata:
