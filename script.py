@@ -6,6 +6,7 @@ from mutagen.id3 import ID3, TIT2, TPE1, APIC
 from mutagen.mp3 import MP3
 from io import BytesIO
 from PIL import Image
+import subprocess
 
 BASE_URL = "https://www.sekaipedia.org"
 HEADERS = {
@@ -62,7 +63,6 @@ def fetch_song_metadata(song_link):
     # Extracting cover image URL
     cover_image_tag = soup.find('img', src=lambda value: value and 'Jacket' in value)
     cover_image_url = "https:" + cover_image_tag['src'] if cover_image_tag else "No cover image found"
-
 
     # Extracting audio details
     audio_details = []
@@ -152,25 +152,106 @@ def download_audio(audio_url, song_folder, title, version_index):
         return None
 
 
+def is_mp3(audio_path):
+    """Check if the audio file is in MP3 format."""
+    try:
+        audio_file = MP3(audio_path, ID3=ID3)
+        return True
+    except:
+        return False
+
+import os
+import subprocess
+
+def convert_to_mp3(audio_path):
+    """Convert OGG or other formats to MP3 and clean up old files."""
+    # Define the output path, replacing .ogg or .wav with .mp3
+    output_path = audio_path.replace('.ogg', '.mp3').replace('.wav', '.mp3')
+
+    # Check if the file already exists and adjust the name if necessary
+    if os.path.exists(output_path):
+        base, ext = os.path.splitext(output_path)
+        counter = 1
+        while os.path.exists(output_path):
+            output_path = f"{base}_{counter}{ext}"
+            counter += 1
+
+    try:
+        # Run the conversion command
+        subprocess.run(['ffmpeg', '-i', audio_path, '-acodec', 'libmp3lame', '-ar', '44100', output_path], check=True)
+        print(f"Converted {audio_path} to {output_path}")
+
+        # Remove the original non-MP3 file after conversion
+        if os.path.exists(audio_path):
+            os.remove(audio_path)  # Remove the original file
+
+        # Rename the new file to the original filename (if needed)
+        os.rename(output_path, audio_path)
+
+        return audio_path  # Return the renamed file path
+    except subprocess.CalledProcessError as e:
+        print(f"Error during conversion: {e}")
+        return None
+
+
+
 def update_audio_metadata(audio_path, title, singers, cover_image_path):
     try:
+        if not is_mp3(audio_path):
+            print(f"File is not MP3, converting {audio_path} to MP3")
+            converted_path = convert_to_mp3(audio_path)
+            if not converted_path:
+                print(f"Skipping {audio_path}, conversion failed.")
+                return
+            audio_path = converted_path  # Use the newly converted file
+
         print(f"Attempting to update metadata for {title} at {audio_path}")
         audio_file = MP3(audio_path, ID3=ID3)
+        print(f"Initial Audio tags: {audio_file.tags}")  # Debugging line
+
+        # Reset any existing tags
         audio_file.tags = ID3()
 
         # Add title and singer metadata
+        print(f"Adding title: {title}")
         audio_file.tags.add(TIT2(encoding=3, text=title))  # Title
+        print(f"Adding singers: {', '.join(singers)}")
         audio_file.tags.add(TPE1(encoding=3, text=", ".join(singers)))  # Singers
 
         if cover_image_path:
-            # Add cover image if exists
+            print(f"Adding cover image from {cover_image_path}")
             with open(cover_image_path, "rb") as img_file:
-                audio_file.tags.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=img_file.read()))
+                img_data = img_file.read()  # Read the image file
+                audio_file.tags.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=img_data))
+                print(f"Cover image added to metadata.")
+        else:
+            print("No cover image provided, skipping cover image metadata.")
 
+        # Save the updated metadata
         audio_file.save()
         print(f"Metadata updated for {title}")
     except Exception as e:
         print(f"Error updating audio metadata for {title} ({audio_path}): {e}")
+
+
+def reencode_mp3(audio_path):
+    output_path = audio_path.replace('.mp3', '_reencoded.mp3')
+    try:
+        print(f"Attempting to re-encode {audio_path} to {output_path}")
+
+        # Run ffmpeg command to re-encode the audio file
+        subprocess.run(['ffmpeg', '-i', audio_path, '-acodec', 'libmp3lame', '-ar', '44100', output_path], check=True)
+
+        # If re-encoding was successful, return the new path
+        print(f"Re-encoding successful: {output_path}")
+        return output_path
+    except subprocess.CalledProcessError as e:
+        print(f"Error during re-encoding {audio_path}: {e}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error during re-encoding {audio_path}: {e}")
+        return None
+
 
 def main():
     song_links = fetch_song_links()
