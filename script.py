@@ -8,13 +8,17 @@ from io import BytesIO
 from PIL import Image
 import subprocess
 
+# Base URL for Sekaipedia
 BASE_URL = "https://www.sekaipedia.org"
+
+# Headers for making HTTP requests appear like a real browser
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
     "Referer": "https://www.google.com",
 }
 
+# Fetch a list of song links from Sekaipedia's List of Songs page
 def fetch_song_links():
     URL = f"{BASE_URL}/wiki/List_of_songs"
     response = requests.get(URL, headers=HEADERS)
@@ -26,7 +30,7 @@ def fetch_song_links():
     if not tables:
         raise Exception("No tables found on the main page.")
 
-    cutoff_date = datetime.now() - timedelta(days=60)
+    cutoff_date = datetime.now() - timedelta(days=60)  # Filter for songs added in the last 60 days
     song_links = []
 
     for table in tables:
@@ -48,6 +52,7 @@ def fetch_song_links():
 
     return song_links
 
+# Fetch metadata for a specific song
 def fetch_song_metadata(song_link):
     response = requests.get(song_link, headers=HEADERS)
     if response.status_code != 200:
@@ -73,7 +78,7 @@ def fetch_song_metadata(song_link):
         print("No second wikitable found.")
         return None
 
-    # Get the second table
+    # Get the second table containing audio details
     second_table = tables[1]
     rows = second_table.find_all('tr')[1:]  # Skip header row
 
@@ -116,6 +121,7 @@ def fetch_song_metadata(song_link):
         "audio_details": audio_details,
     }
 
+# Download the cover image and save it locally
 def download_cover_image(cover_image_url, song_folder):
     try:
         img_response = requests.get(cover_image_url, headers=HEADERS)
@@ -133,7 +139,7 @@ def download_cover_image(cover_image_url, song_folder):
         print(f"Error downloading cover image: {e}")
         return None
 
-
+# Download the audio file and save it locally
 def download_audio(audio_url, song_folder, title, version_index):
     try:
         audio_response = requests.get(audio_url, headers=HEADERS)
@@ -151,7 +157,7 @@ def download_audio(audio_url, song_folder, title, version_index):
         print(f"Error downloading audio: {e}")
         return None
 
-
+# Check if the file is an MP3
 def is_mp3(audio_path):
     """Check if the audio file is in MP3 format."""
     try:
@@ -160,12 +166,9 @@ def is_mp3(audio_path):
     except:
         return False
 
-import os
-import subprocess
-
+# Convert audio files to MP3 format (if necessary)
 def convert_to_mp3(audio_path):
     """Convert OGG or other formats to MP3 and clean up old files."""
-    # Define the output path, replacing .ogg or .wav with .mp3
     output_path = audio_path.replace('.ogg', '.mp3').replace('.wav', '.mp3').replace('.flac', '.mp3')  # Additional formats can be added
 
     # Check if the file already exists and adjust the name if necessary
@@ -183,7 +186,7 @@ def convert_to_mp3(audio_path):
 
         # Remove the original non-MP3 file after conversion
         if os.path.exists(audio_path):
-            os.remove(audio_path)  # Remove the original file
+            os.remove(audio_path)
 
         # Rename the new file to the original filename (if needed)
         os.rename(output_path, audio_path)
@@ -193,9 +196,10 @@ def convert_to_mp3(audio_path):
         print(f"Error during conversion: {e}")
         return None
 
+# Update metadata for the downloaded audio (e.g., title, singers, cover image)
 def update_audio_metadata(audio_path, title, singers, cover_image_path):
     try:
-        # Convert the file to MP3 if it's not already (this step is always executed now)
+        # Convert the file to MP3 if it's not already
         print(f"Converting {audio_path} to MP3 (if needed)...")
         converted_path = convert_to_mp3(audio_path)
         if not converted_path:
@@ -232,7 +236,7 @@ def update_audio_metadata(audio_path, title, singers, cover_image_path):
     except Exception as e:
         print(f"Error updating audio metadata for {title} ({audio_path}): {e}")
 
-
+# Re-encode MP3 files to ensure compatibility
 def reencode_mp3(audio_path):
     output_path = audio_path.replace('.mp3', '_reencoded.mp3')
     try:
@@ -251,9 +255,9 @@ def reencode_mp3(audio_path):
         print(f"Unexpected error during re-encoding {audio_path}: {e}")
         return None
 
-
+# Main function to execute the process
 def main():
-    song_links = fetch_song_links()
+    song_links = fetch_song_links()  # Fetch song links
     print(f"Found {len(song_links)} songs.")
 
     for idx, song_link in enumerate(song_links[:5]):  # Process first 5 songs
@@ -274,10 +278,7 @@ def main():
                     if cover_image_path:
                         update_audio_metadata(audio_path, metadata['title'], version['singers'], cover_image_path)
                     else:
-                        print(f"No cover image for {metadata['title']}")
-                else:
-                    print(f"Failed to download audio for {metadata['title']}")
-
+                        print(f"No cover image to update for {audio_path}")
 
 if __name__ == "__main__":
     main()
