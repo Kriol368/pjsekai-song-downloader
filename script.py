@@ -7,6 +7,7 @@ from mutagen.mp3 import MP3
 from io import BytesIO
 from PIL import Image
 import subprocess
+import shutil
 
 # Base URL for Sekaipedia
 BASE_URL = "https://www.sekaipedia.org"
@@ -254,9 +255,19 @@ def reencode_mp3(audio_path):
     except Exception as e:
         print(f"Unexpected error during re-encoding {audio_path}: {e}")
         return None
+# Function to clear the 'out' folder before execution
+def clear_output_folder():
+    out_folder = 'out'
+    if os.path.exists(out_folder):
+        shutil.rmtree(out_folder)  # Remove the folder and all its contents
+        print(f"Cleared the {out_folder} folder.")
+    else:
+        print(f"{out_folder} folder does not exist. Creating a new one.")
+        os.makedirs(out_folder)  # Create the folder if it doesn't exist
 
 # Main function to execute the process
 def main():
+    clear_output_folder()
     song_links = fetch_song_links()  # Fetch song links
     print(f"Found {len(song_links)} songs.")
 
