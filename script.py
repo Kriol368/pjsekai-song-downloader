@@ -166,7 +166,7 @@ import subprocess
 def convert_to_mp3(audio_path):
     """Convert OGG or other formats to MP3 and clean up old files."""
     # Define the output path, replacing .ogg or .wav with .mp3
-    output_path = audio_path.replace('.ogg', '.mp3').replace('.wav', '.mp3')
+    output_path = audio_path.replace('.ogg', '.mp3').replace('.wav', '.mp3').replace('.flac', '.mp3')  # Additional formats can be added
 
     # Check if the file already exists and adjust the name if necessary
     if os.path.exists(output_path):
@@ -193,17 +193,15 @@ def convert_to_mp3(audio_path):
         print(f"Error during conversion: {e}")
         return None
 
-
-
 def update_audio_metadata(audio_path, title, singers, cover_image_path):
     try:
-        if not is_mp3(audio_path):
-            print(f"File is not MP3, converting {audio_path} to MP3")
-            converted_path = convert_to_mp3(audio_path)
-            if not converted_path:
-                print(f"Skipping {audio_path}, conversion failed.")
-                return
-            audio_path = converted_path  # Use the newly converted file
+        # Convert the file to MP3 if it's not already (this step is always executed now)
+        print(f"Converting {audio_path} to MP3 (if needed)...")
+        converted_path = convert_to_mp3(audio_path)
+        if not converted_path:
+            print(f"Skipping {audio_path}, conversion failed.")
+            return
+        audio_path = converted_path  # Use the newly converted file (or the original if already MP3)
 
         print(f"Attempting to update metadata for {title} at {audio_path}")
         audio_file = MP3(audio_path, ID3=ID3)
@@ -218,6 +216,7 @@ def update_audio_metadata(audio_path, title, singers, cover_image_path):
         print(f"Adding singers: {', '.join(singers)}")
         audio_file.tags.add(TPE1(encoding=3, text=", ".join(singers)))  # Singers
 
+        # Add cover image if provided
         if cover_image_path:
             print(f"Adding cover image from {cover_image_path}")
             with open(cover_image_path, "rb") as img_file:
