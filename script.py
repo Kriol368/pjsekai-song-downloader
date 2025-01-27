@@ -60,8 +60,9 @@ def fetch_song_metadata(song_link):
     title = title_tag.replace(" - Sekaipedia", "").strip()
 
     # Extracting cover image URL
-    cover_image_tag = soup.find('meta', property="og:image")
-    cover_image_url = cover_image_tag['content'] if cover_image_tag else "No cover image found"
+    cover_image_tag = soup.find('img', src=lambda value: value and 'Jacket' in value)
+    cover_image_url = "https:" + cover_image_tag['src'] if cover_image_tag else "No cover image found"
+
 
     # Extracting audio details
     audio_details = []
@@ -175,7 +176,7 @@ def main():
     song_links = fetch_song_links()
     print(f"Found {len(song_links)} songs.")
 
-    for idx, song_link in enumerate(song_links):  # Process first 5 songs
+    for idx, song_link in enumerate(song_links[:5]):  # Process first 5 songs
         print(f"Processing {idx + 1}/{len(song_links)}: {song_link}")
         metadata = fetch_song_metadata(song_link)
         if metadata:
