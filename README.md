@@ -2,23 +2,27 @@
 
 This Python project scrapes the Sekaipedia website to fetch metadata and download songs along with their cover images. It also updates the song metadata, including title, singers, and album art.
 
-## Project under construction!!!
-
 ## Features
 
 - Scrape song metadata from [Sekaipedia](https://www.sekaipedia.org)
-- Filter songs added in the last 60 days
+- Excludes songs added in the last 60 days
 - Download song cover images and audio files
 - Update ID3 metadata for MP3 files, including title, singers, and album art
+
 
 ## Requirements
 
 - Python 3.9+
 - Libraries:
-  - `requests`
-  - `BeautifulSoup4`
-  - `mutagen`
-  - `Pillow`
+  - `beautifulsoup4==4.12.3`
+  - `requests==2.32.3`
+  - `mutagen==1.47.0`
+  - `pillow==11.1.0`
+  - `soupsieve==2.6` (required by `beautifulsoup4`)
+  - `certifi==2024.12.14` (required by `requests`)
+  - `charset-normalizer==3.4.1` (required by `requests`)
+  - `idna==3.10` (required by `requests`)
+  - `urllib3==2.3.0` (required by `requests`)
 
 ## Installation
 
@@ -94,4 +98,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Acknowledgments
 
 - Data source: [Sekaipedia](https://www.sekaipedia.org)
-- Libraries: `requests`, `BeautifulSoup`, `mutagen`, `Pillow`
+- Libraries: `beautifulsoup4==4.12.3`, `requests==2.32.3`, `mutagen==1.47.0`, `pillow==11.1.0`, `soupsieve==2.6`, `certifi==2024.12.14`, `charset-normalizer==3.4.1`, `idna==3.10`, `urllib3==2.3.0`
