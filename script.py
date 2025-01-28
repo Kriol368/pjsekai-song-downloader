@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
@@ -147,11 +148,13 @@ def download_cover_image(cover_image_url, song_folder):
 # Download the audio file and save it locally
 def download_audio(audio_url, song_folder, title, version_index):
     try:
+        os.makedirs(song_folder, exist_ok=True)  # Ensure the folder exists
+        sanitized_title = sanitize_filename(title)
+        audio_filename = f"{sanitized_title}_{version_index}.mp3"
+        audio_path = os.path.join(song_folder, audio_filename)
+
         audio_response = requests.get(audio_url, headers=HEADERS)
         if audio_response.status_code == 200:
-            # Add the version index to the audio file name to avoid overwriting
-            audio_filename = f"{title}_{version_index}.mp3"
-            audio_path = os.path.join(song_folder, audio_filename)
             with open(audio_path, "wb") as f:
                 f.write(audio_response.content)
             return audio_path
@@ -161,6 +164,11 @@ def download_audio(audio_url, song_folder, title, version_index):
     except Exception as e:
         print(f"Error downloading audio: {e}")
         return None
+
+#Sanitize the filename to avoid errors
+def sanitize_filename(filename):
+    # Replace any invalid characters with underscores
+    return re.sub(r'[<>:"/\\|?*]', '_', filename).strip()
 
 # Check if the file is an MP3
 def is_mp3(audio_path):
@@ -259,6 +267,7 @@ def reencode_mp3(audio_path):
     except Exception as e:
         print(f"Unexpected error during re-encoding {audio_path}: {e}")
         return None
+
 # Function to clear the 'out' folder before execution
 def clear_output_folder():
     out_folder = 'out'
@@ -279,8 +288,11 @@ def main():
         print(f"Processing {idx + 1}/{len(song_links)}: {song_link}")
         metadata = fetch_song_metadata(song_link)
         if metadata:
-            song_folder = os.path.join('out', metadata['title'])
+            # Replace special characters with a safe character like an underscore
+            safe_title = re.sub(r'[<>:"/\\|?*,]', '_', metadata['title'])
+            song_folder = os.path.join('out', safe_title)
             os.makedirs(song_folder, exist_ok=True)
+
 
             # Download cover image
             cover_image_path = download_cover_image(metadata['cover_image'], song_folder)
