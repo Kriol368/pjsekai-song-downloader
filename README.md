@@ -52,11 +52,6 @@ This Python project scrapes the Sekaipedia website to fetch metadata and downloa
    pip install -r requirements.txt
    ```
 
-4. Create an output directory for the downloaded files:
-   ```bash
-   mkdir out
-   ```
-
 ## Usage
 
 Run the script using Python:
