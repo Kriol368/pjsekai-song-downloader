@@ -3,7 +3,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from mutagen.id3 import ID3, TIT2, TPE1, APIC
+from mutagen.id3 import ID3, TIT2, TPE1, APIC, TALB
 from mutagen.mp3 import MP3
 from io import BytesIO
 from PIL import Image
@@ -232,6 +232,11 @@ def update_audio_metadata(audio_path, title, singers, cover_image_path):
         audio_file.tags.add(TIT2(encoding=3, text=title))  # Title
         print(f"Adding singers: {', '.join(singers)}")
         audio_file.tags.add(TPE1(encoding=3, text=", ".join(singers)))  # Singers
+
+        # Add album metadata
+        album_name = "Project SEKAI"
+        print(f"Adding album: {album_name}")
+        audio_file.tags.add(TALB(encoding=3, text=album_name))  # Album
 
         # Add cover image if provided
         if cover_image_path:
