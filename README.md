@@ -60,7 +60,7 @@ python script.py
 ```
 
 The script will:
-1. Fetch the list of songs from Sekaipedia added in the last 60 days.
+1. Fetch the list of songs from Sekaipedia.
 2. Scrape metadata for each song, including:
     - Title
     - Singers
