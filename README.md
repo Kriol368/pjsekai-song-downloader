@@ -5,7 +5,7 @@ This Python project scrapes the Sekaipedia website to fetch metadata and downloa
 ## Features
 
 - Scrape song metadata from [Sekaipedia](https://www.sekaipedia.org)
-- Excludes songs added in the last 60 days
+- Excludes songs added in a set number of days
 - Download song cover images and audio files
 - Update ID3 metadata for MP3 files, including title, singers, and album art
 
