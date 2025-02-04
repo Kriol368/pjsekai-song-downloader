@@ -9,6 +9,7 @@ from io import BytesIO
 from PIL import Image
 import subprocess
 import shutil
+import json
 
 # Base URL for Sekaipedia
 BASE_URL = "https://www.sekaipedia.org"
@@ -20,8 +21,15 @@ HEADERS = {
     "Referer": "https://www.google.com",
 }
 
+def load_config():
+    config_file = "config.json"
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"{config_file} not found. Please create it with appropriate settings.")
+    with open(config_file, "r") as file:
+        return json.load(file)
+
 # Fetch a list of song links from Sekaipedia's List of Songs page
-def fetch_song_links():
+def fetch_song_links(days):
     URL = f"{BASE_URL}/wiki/List_of_songs"
     response = requests.get(URL, headers=HEADERS)
     if response.status_code != 200:
@@ -32,7 +40,7 @@ def fetch_song_links():
     if not tables:
         raise Exception("No tables found on the main page.")
 
-    cutoff_date = datetime.now() - timedelta(days=60)  # Filter for songs added in the last 60 days
+    cutoff_date = datetime.now() - timedelta(days)
     song_links = []
 
     for table in tables:
@@ -210,7 +218,7 @@ def convert_to_mp3(audio_path):
         return None
 
 # Update metadata for the downloaded audio (e.g., title, singers, cover image)
-def update_audio_metadata(audio_path, title, singers, cover_image_path):
+def update_audio_metadata(audio_path, title, singers, cover_image_path, album_name):
     try:
         # Convert the file to MP3 if it's not already
         print(f"Converting {audio_path} to MP3 (if needed)...")
@@ -234,7 +242,6 @@ def update_audio_metadata(audio_path, title, singers, cover_image_path):
         audio_file.tags.add(TPE1(encoding=3, text=", ".join(singers)))  # Singers
 
         # Add album metadata
-        album_name = "Project SEKAI"
         print(f"Adding album: {album_name}")
         audio_file.tags.add(TALB(encoding=3, text=album_name))  # Album
 
@@ -274,8 +281,7 @@ def reencode_mp3(audio_path):
         return None
 
 # Function to clear the 'out' folder before execution
-def clear_output_folder():
-    out_folder = 'out'
+def clear_output_folder(out_folder):
     if os.path.exists(out_folder):
         shutil.rmtree(out_folder)  # Remove the folder and all its contents
         print(f"Cleared the {out_folder} folder.")
@@ -285,8 +291,16 @@ def clear_output_folder():
 
 # Main function to execute the process
 def main():
-    clear_output_folder()
-    song_links = fetch_song_links()  # Fetch song links
+    # Load configuration
+    config = load_config()
+
+    # Extract settings with fallbacks
+    output_folder = config.get("output_folder", "./out")
+    days_lapse = config.get("days_lapse", 60)
+    album_name = config.get("album_name", "Project SEKAI")
+
+    clear_output_folder(output_folder)
+    song_links = fetch_song_links(days_lapse)  # Fetch song links
     print(f"Found {len(song_links)} songs.")
 
     for idx, song_link in enumerate(song_links):
@@ -308,7 +322,7 @@ def main():
                 if audio_path:
                     print(f"Audio downloaded: {audio_path}")
                     if cover_image_path:
-                        update_audio_metadata(audio_path, metadata['title'], version['singers'], cover_image_path)
+                        update_audio_metadata(audio_path, metadata['title'], version['singers'], cover_image_path, album_name)
                     else:
                         print(f"No cover image to update for {audio_path}")
 
